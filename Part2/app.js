@@ -2,53 +2,48 @@ $(document).ready(function () {
     const url = "https://deckofcardsapi.com/api/deck";
 
     //Part 1
-    axios.get(url + "/new/draw/?count=1")
-        .then(response => {
-            let { suit, value } = response.data.cards[0];
-            console.log(`${value} of ${suit}`);
-        })
-        .catch((err) => console.log(err));
+    async function singleCard(){
+    let resp = await axios.get(url + "/new/draw/?count=1")
+    let { suit, value } = resp.data.cards[0];
+    console.log(`${value} of ${suit}`);
+    };
+    singleCard()
+        
 
     //Part 2
-    let firstCard = null;
-    axios.get(url + "/new/draw/")
-        .then(response => {
-            firstCard = response.data.cards[0]
-            let deckId= response.data.deck_id;
-            return axios(`${url}/${deckId}/draw/`)
-        })
-        .then(response =>{
-            let secondCard = response.data.cards[0]
-            console.log(
-                  `${secondCard.value} of ${secondCard.suit} and ${firstCard.value} of ${firstCard.suit}`
-                );
-             
-            })
-        .catch((err) => console.log(err));
+    async function twoCards(){
+    let firstCard = await axios.get(url + "/new/draw/");
+    let deckId= firstCard.data.deck_id;
+    let secondCard = await axios.get(`${url}/${deckId}/draw/`);
+    [firstCard, secondCard].forEach(card => {
+        let { suit, value } = card.data.cards[0];
+        console.log(`${value} of ${suit}`);
+      });
+    };
+    twoCards()
 
-
-    let $button = $("#give-me-card");
-    let $cardDiv = $("#card");
+    //Part3
+    async function drawCards(){ 
+    let resp = await axios.get(`${url}/new/draw`);
+    deckId = resp.data["deck_id"];
+    if (deckId) {
+        $("#card-button").show();
+    }
     
-    let deckId = axios.get(url + "/new/shuffle/?deck_count=1").then(
-        (response) => {
-        deckId = response.data.deck_id;
-        }
-    );
-      
-    $button.on("click", function () {
-        axios.get(url + `/${deckId}/draw/?count=1`)
-        .then((response) => {
-            if (response.data.remaining != 0) {
-            let $img = $("<img>");
-            $img.attr("src", response.data.cards[0].image);
+    $("#give-me-card").on("click", async function () {
+        let $cardDiv = $("#card");
+        let $img = $("<img>");
+        resp = await axios.get(`${url}/${deckId}/draw/`);
+        if (resp.data["success"]) {
+        for (let card of resp.data["cards"]) {
+            $img.attr("src", card["image"]);
             $cardDiv.prepend($img);
-            } else {
+        }
+        } else {
             $cardDiv.prepend("<h1>All cards drawn</h1>");
-            $button.hide();
-            }
-        })
-        .catch((err) => console.log(err));
-    });        
-
+            $("#give-me-card").hide();
+        }
     });
+};
+    drawCards();
+});    

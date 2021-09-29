@@ -3,33 +3,35 @@ const url = "http://numbersapi.com/"
    
 $(document).ready(function () {
 //Part 1
-axios.get(url + '11?json')
-    .then((data) =>{
-        let resp = data.data
-        $("#fav-number-fact").text(resp.text);
-    })
-    .catch((err) => console.log(err));
-
-//Part 2
-axios.get(url + '1..3,11?json')
-    .then((data) =>{
-        let resp = data.data
-        Object.values(resp).forEach(val => {
-            $("#mul-numbers-fact").append([val]).append("<br>");
-        });
-        $("#fav-number-fact").text(resp.text);
-    })
-    .catch((err) => console.log(err));
-
-//Part 3
-let fourFacts = [];
-for (let i=0; i<4; i++){
-    fourFacts.push(axios.get(url + "11?json"))
+async function getNumberFact(num){
+    let resp = await axios.get(`${url}${num}?json`)
+    $("#fav-number-fact").text(resp.data.text);
 }
 
-Promise.all(fourFacts)
-    .then(factsArr => factsArr.forEach(f => 
-        $("#four-facts").append(f.data.text).append("<br>")))
-    .catch( err => console.log(err))
+getNumberFact(11)
+
+//Part 2
+async function getFactsForMultipleNums(listOfNums){
+    const resp = await axios.get(`${url}${listOfNums}?json`)
+    listOfNums.forEach(num => {
+        let $li = $("<li>").text(resp.data[num]);
+        $("#mul-numbers-fact").append($li);
+    });   
+}
+
+getFactsForMultipleNums([1,4,5,6,7]);
+
+//Part 3
+async function get4Facts(num){
+    let facts = await Promise.all(
+        Array.from({ length: 4 }, () => axios.get(`${url}${num}?json`)));
+    // console.log(facts)
+    facts.forEach(fact => {
+            let $li = $("<li>").text(fact.data.text);
+            $("#four-facts").append($li);
+        })  
+
+    };
+get4Facts(11)
 });
     
